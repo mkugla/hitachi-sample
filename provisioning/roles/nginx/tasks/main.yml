@@ -1,0 +1,62 @@
+---
+- name: Install Nginx
+  become: true
+  dnf:
+    name: nginx
+    state: present
+  notify: Restart and enable Nginx
+
+- name: Implement custom Nginx config for Cockpit
+  become: true
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '644'
+  notify: Restart and enable Nginx
+
+- name: Set httpd_can_network_connect flag on and keep it persistent across reboots
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+
+- name: Permit traffic for http and https
+  firewalld:
+    service: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - http
+    - https
+
+- name: Ensure directory exists for local self-signed TLS certs
+  file:
+    path: /etc/letsencrypt/live/{{inventory_hostname}}
+    state: directory
+
+- name: Ensure directory exists for local CSR.
+  file:
+    path: /etc/ssl/private
+    state: directory
+
+- name: Generate an OpenSSL private key
+  openssl_privatekey:
+    path: /etc/letsencrypt/live/{{inventory_hostname}}/privkey.pem
+  notify: Restart and enable Nginx
+
+- name: Generate an OpenSSL CSR
+  openssl_csr:
+    path: /etc/ssl/private/{{inventory_hostname}}.csr
+    privatekey_path: /etc/letsencrypt/live/{{inventory_hostname}}/privkey.pem
+    common_name: "{{cockpit_url}}"
+
+- name: Generate a Self Signed OpenSSL certificate
+  openssl_certificate:
+    path: /etc/letsencrypt/live/{{inventory_hostname}}/fullchain.pem
+    privatekey_path: /etc/letsencrypt/live/{{inventory_hostname}}/privkey.pem
+    csr_path: /etc/ssl/private/{{inventory_hostname}}.csr
+    provider: selfsigned
+  notify: Restart and enable Nginx

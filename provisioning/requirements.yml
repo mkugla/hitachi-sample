@@ -1,0 +1,12 @@
+---
+roles:
+  - name: geerlingguy.ansible
+    version: 2.1.0
+  - name: geerlingguy.docker
+    version: 4.1.1
+  - name: geerlingguy.pip
+    version: 2.1.0
+  - name: geerlingguy.repo-epel
+    version: 3.1.0
+  - name: linux-system-roles.cockpit
+    version: 1.1.1

@@ -1,0 +1,9 @@
+docker_users:
+  - vagrant
+
+cockpit_config:
+  WebService:
+    Origins: https://cockpit.kugla.io wss://cockpit.kugla.io
+    ProtocolHeader: X-Forwarded-Proto
+
+cockpit_url: "cockpit.kugla.io"
